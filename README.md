@@ -13,11 +13,22 @@
 
 ### **Para Revisores y Desarrolladores:**
 
+**Linux/macOS:**
 ```bash
 make install
 ```
 
-**¡Eso es todo!** 🎉 Este comando único:
+**Windows (Git Bash/PowerShell):**
+```bash
+docker compose down -v --remove-orphans
+docker compose build --no-cache  
+docker compose up -d
+# Esperar 30 segundos
+docker compose exec -T backend python manage.py migrate
+docker compose exec -T backend python init_data.py
+```
+
+**¡Eso es todo!** 🎉 Estos comandos:
 - ✅ Verifica Docker disponible
 - ✅ Construye todas las imágenes optimizadas
 - ✅ Levanta servicios (Angular:4200, Django:8000, PostgreSQL:5432)
