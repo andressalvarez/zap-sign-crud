@@ -210,7 +210,7 @@
                           (click)="addSigner()"
                           class="px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors">
                     Agregar Firmante
-                  </button>
+      </button>
                 </div>
               </ng-template>
             </div>
@@ -256,7 +256,7 @@
             <mat-icon class="h-5 w-5" *ngIf="!saving">save</mat-icon>
             <mat-icon class="h-5 w-5 animate-spin" *ngIf="saving">refresh</mat-icon>
             <span>{{ saving ? 'Guardando...' : 'Guardar Cambios' }}</span>
-          </button>
+      </button>
         </div>
       </div>
     </form>
@@ -282,6 +282,6 @@
     <p class="text-gray-500 mb-4">{{ error }}</p>
     <button routerLink="/documents" class="px-4 py-2 bg-blue-500 text-white rounded-lg">
       Volver a la Lista
-    </button>
+      </button>
   </div>
 </div>
