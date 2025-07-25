@@ -24,30 +24,30 @@
           <mat-icon>arrow_back</mat-icon>
           Volver
         </button>
-        
+
         <button mat-raised-button color="accent" (click)="updateStatus()" [disabled]="updating">
           <mat-spinner *ngIf="updating" diameter="18" class="button-spinner"></mat-spinner>
           <mat-icon *ngIf="!updating">sync</mat-icon>
           {{ updating ? 'Actualizando...' : 'Actualizar Estado' }}
         </button>
-        
+
         <button mat-icon-button [matMenuTriggerFor]="actionsMenu">
           <mat-icon>more_vert</mat-icon>
         </button>
-        
+
         <mat-menu #actionsMenu="matMenu">
           <button mat-menu-item (click)="editDocument()">
             <mat-icon>edit</mat-icon>
             <span>Editar</span>
           </button>
-          
+
           <button mat-menu-item (click)="openPdfUrl()">
             <mat-icon>open_in_new</mat-icon>
             <span>Ver en ZapSign</span>
           </button>
-          
+
           <mat-divider></mat-divider>
-          
+
           <button mat-menu-item (click)="deleteDocument()" class="delete-action">
             <mat-icon color="warn">delete</mat-icon>
             <span>Eliminar</span>
@@ -79,8 +79,8 @@
                   <span class="progress-text">
                     {{ getCompletedSignersCount() }} de {{ getTotalSignersCount() }} firmado(s)
                   </span>
-                  <mat-progress-bar 
-                    mode="determinate" 
+                  <mat-progress-bar
+                    mode="determinate"
                     [value]="getProgressPercentage()"
                     class="progress-bar">
                   </mat-progress-bar>
@@ -173,7 +173,7 @@
             <div class="signer-avatar">
               <mat-icon>person</mat-icon>
             </div>
-            
+
             <div class="signer-info">
               <div class="signer-name">{{ signer.name }}</div>
               <div class="signer-email">{{ signer.email }}</div>
@@ -186,7 +186,7 @@
             <div class="signer-status">
               <mat-chip [color]="getSignerStatusColor(signer.status)">
                 <mat-icon>
-                  {{ signer.status === 'SIGNED' ? 'check_circle' : 
+                  {{ signer.status === 'SIGNED' ? 'check_circle' :
                      signer.status === 'PENDING' ? 'schedule' : 'cancel' }}
                 </mat-icon>
                 {{ signer.status }}

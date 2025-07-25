@@ -13,7 +13,7 @@ import { Document } from '../../../../core/models/document.interface';
 })
 export class DocumentDetailComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
-  
+
   document: Document | null = null;
   loading = false;
   updating = false;
@@ -67,16 +67,16 @@ export class DocumentDetailComponent implements OnInit, OnDestroy {
           this.document = updatedDoc;
           this.updating = false;
           this.snackBar.open(
-            `Estado actualizado: ${updatedDoc.status}`, 
-            'Cerrar', 
+            `Estado actualizado: ${updatedDoc.status}`,
+            'Cerrar',
             { duration: 3000 }
           );
         },
         error: (error) => {
           this.updating = false;
           this.snackBar.open(
-            `Error al actualizar estado: ${error.message}`, 
-            'Cerrar', 
+            `Error al actualizar estado: ${error.message}`,
+            'Cerrar',
             { duration: 5000 }
           );
         }

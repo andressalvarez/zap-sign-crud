@@ -5,7 +5,7 @@
 
   .header-card {
     margin-bottom: 24px;
-    
+
     mat-card-header {
       mat-card-title {
         display: flex;
@@ -15,7 +15,7 @@
         font-weight: 500;
         color: #1976d2;
       }
-      
+
       mat-card-subtitle {
         margin-top: 8px;
         color: rgba(0, 0, 0, 0.6);
@@ -80,7 +80,7 @@
       .signer-card {
         margin-bottom: 16px;
         border: 1px solid rgba(0, 0, 0, 0.12);
-        
+
         mat-card-header {
           padding: 16px 16px 0 16px;
           display: flex;
@@ -113,6 +113,47 @@
             }
           }
         }
+      }
+    }
+
+    // AGREGADO: Estilos para vista de solo lectura de firmantes
+    .signers-readonly {
+      .signer-readonly {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 0;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+
+        &:last-child {
+          border-bottom: none;
+        }
+
+        .signer-info {
+          flex: 1;
+
+          .signer-name {
+            font-weight: 500;
+            margin-bottom: 4px;
+          }
+
+          .signer-email {
+            color: rgba(0, 0, 0, 0.6);
+            font-size: 14px;
+          }
+        }
+
+        mat-chip {
+          font-size: 12px;
+          text-transform: uppercase;
+        }
+      }
+
+      mat-hint {
+        margin-top: 16px;
+        display: block;
+        color: rgba(0, 0, 0, 0.6);
+        font-style: italic;
       }
     }
 

@@ -3,11 +3,11 @@
   <mat-card class="header-card">
     <mat-card-header>
       <mat-card-title>
-        <mat-icon>add_circle</mat-icon>
-        Crear Nuevo Documento
+        <mat-icon>{{ isEditMode ? 'edit' : 'add_circle' }}</mat-icon>
+        {{ isEditMode ? 'Editar Documento' : 'Crear Nuevo Documento' }}
       </mat-card-title>
       <mat-card-subtitle>
-        Complete la información para crear un documento con ZapSign
+        {{ isEditMode ? 'Modifique la información del documento' : 'Complete la información para crear un documento con ZapSign' }}
       </mat-card-subtitle>
     </mat-card-header>
   </mat-card>
@@ -34,7 +34,7 @@
             </mat-form-field>
           </div>
 
-          <div class="form-row">
+          <div class="form-row" *ngIf="!isEditMode">
             <mat-form-field appearance="outline" class="full-width">
               <mat-label>URL del archivo PDF</mat-label>
               <input matInput formControlName="pdf_url" placeholder="https://ejemplo.com/documento.pdf">
@@ -49,7 +49,7 @@
           <div class="form-row">
             <mat-form-field appearance="outline" class="half-width">
               <mat-label>Empresa</mat-label>
-              <mat-select formControlName="company_id">
+              <mat-select formControlName="company_id" [disabled]="isEditMode">
                 <mat-option *ngFor="let company of companies" [value]="company.id">
                   {{ company.name }}
                 </mat-option>
@@ -58,6 +58,7 @@
               <mat-error *ngIf="hasFieldError('company_id')">
                 {{ getFieldError('company_id') }}
               </mat-error>
+              <mat-hint *ngIf="isEditMode">La empresa no se puede cambiar en modo edición</mat-hint>
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="half-width">
@@ -72,7 +73,7 @@
         </div>
 
         <!-- Signers Section -->
-        <div class="form-section">
+        <div class="form-section" *ngIf="!isEditMode">
           <div class="section-header">
             <h3 class="section-title">
               <mat-icon>people</mat-icon>
@@ -86,7 +87,7 @@
           </div>
 
           <div class="signers-container" formArrayName="signers">
-            <mat-card *ngFor="let signerGroup of signers.controls; let i = index" 
+            <mat-card *ngFor="let signerGroup of signers.controls; let i = index"
                       class="signer-card" [formGroupName]="i">
               <mat-card-header>
                 <mat-card-title class="signer-title">
@@ -112,7 +113,7 @@
 
                   <mat-form-field appearance="outline" class="half-width">
                     <mat-label>Email</mat-label>
-                    <input matInput formControlName="email" type="email" 
+                    <input matInput formControlName="email" type="email"
                            placeholder="juan.perez@ejemplo.com">
                     <mat-icon matSuffix>email</mat-icon>
                     <mat-error *ngIf="hasSignerFieldError(i, 'email')">
@@ -123,6 +124,28 @@
               </mat-card-content>
             </mat-card>
           </div>
+        </div>
+
+        <!-- Signers View Only (Edit Mode) -->
+        <div class="form-section" *ngIf="isEditMode && currentDocument">
+          <h3 class="section-title">
+            <mat-icon>people</mat-icon>
+            Firmantes ({{ currentDocument.signers.length }})
+          </h3>
+          <mat-card class="signers-readonly">
+            <mat-card-content>
+              <div *ngFor="let signer of currentDocument.signers" class="signer-readonly">
+                <div class="signer-info">
+                  <div class="signer-name">{{ signer.name }}</div>
+                  <div class="signer-email">{{ signer.email }}</div>
+                </div>
+                <mat-chip [color]="getSignerStatusColor(signer.status)">
+                  {{ signer.status }}
+                </mat-chip>
+              </div>
+              <mat-hint>Los firmantes no se pueden modificar una vez creado el documento</mat-hint>
+            </mat-card-content>
+          </mat-card>
         </div>
 
         <!-- Helper Section -->
@@ -151,12 +174,12 @@
           <mat-icon>cancel</mat-icon>
           Cancelar
         </button>
-        
-        <button type="submit" mat-raised-button color="primary" 
+
+        <button type="submit" mat-raised-button color="primary"
                 [disabled]="documentForm.invalid || submitting">
           <mat-spinner *ngIf="submitting" diameter="20" class="button-spinner"></mat-spinner>
-          <mat-icon *ngIf="!submitting">save</mat-icon>
-          {{ submitting ? 'Creando...' : 'Crear Documento' }}
+          <mat-icon *ngIf="!submitting">{{ isEditMode ? 'save' : 'add' }}</mat-icon>
+          {{ submitting ? (isEditMode ? 'Actualizando...' : 'Creando...') : (isEditMode ? 'Actualizar Documento' : 'Crear Documento') }}
         </button>
       </mat-card-actions>
     </mat-card>

@@ -1,9 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { DocumentService } from '../../services/document.service';
-import { Company, DocumentCreateRequest } from '../../../../core/models/document.interface';
+import { Company, DocumentCreateRequest, Document } from '../../../../core/models/document.interface';
 
 @Component({
   selector: 'app-document-form',
@@ -15,11 +15,17 @@ export class DocumentFormComponent implements OnInit {
   companies: Company[] = [];
   loading = false;
   submitting = false;
+  
+  // AGREGADO: Modo edición
+  isEditMode = false;
+  documentId: number | null = null;
+  currentDocument: Document | null = null;
 
   constructor(
     private fb: FormBuilder,
     private documentService: DocumentService,
     private router: Router,
+    private route: ActivatedRoute,  // AGREGADO
     private snackBar: MatSnackBar
   ) {
     this.documentForm = this.createForm();
@@ -27,16 +33,92 @@ export class DocumentFormComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadCompanies();
+    this.checkEditMode();  // AGREGADO
+  }
+
+  // AGREGADO: Detectar modo edición
+  private checkEditMode(): void {
+    const id = this.route.snapshot.params['id'];
+    if (id) {
+      this.isEditMode = true;
+      this.documentId = +id;
+      this.loadDocumentForEdit();
+    }
+    this.updateValidators(); // Llamar después de establecer el modo
+  }
+
+  // AGREGADO: Cargar documento para edición
+  private loadDocumentForEdit(): void {
+    if (!this.documentId) return;
+
+    this.loading = true;
+    this.documentService.getDocument(this.documentId).subscribe({
+      next: (document) => {
+        this.currentDocument = document;
+        this.populateForm(document);
+        this.loading = false;
+      },
+      error: (error) => {
+        this.snackBar.open(`Error al cargar documento: ${error.message}`, 'Cerrar', {
+          duration: 5000
+        });
+        this.loading = false;
+        this.router.navigate(['/documents']);
+      }
+    });
+  }
+
+  // AGREGADO: Llenar formulario con datos existentes
+  private populateForm(document: Document): void {
+    this.documentForm.patchValue({
+      name: document.name,
+      company_id: document.company.id,
+      created_by: document.created_by
+    });
+
+    // Llenar firmantes existentes
+    const signersArray = this.signers;
+    signersArray.clear();
+    
+    document.signers.forEach(signer => {
+      signersArray.push(this.fb.group({
+        name: [signer.name, [Validators.required, Validators.minLength(2)]],
+        email: [signer.email, [Validators.required, Validators.email]]
+      }));
+    });
   }
 
   private createForm(): FormGroup {
     return this.fb.group({
       name: ['', [Validators.required, Validators.minLength(3)]],
-      pdf_url: ['', [Validators.required, this.pdfUrlValidator]],
-      company_id: ['', [Validators.required]],
+      pdf_url: [''], // Se validará condicionalmente en ngOnInit
+      company_id: [''], // Se validará condicionalmente en ngOnInit  
       created_by: ['', [Validators.required]],
       signers: this.fb.array([this.createSignerForm()], [Validators.minLength(1)])
     });
+  }
+
+  // AGREGADO: Actualizar validadores según el modo
+  private updateValidators(): void {
+    const pdfUrlControl = this.documentForm.get('pdf_url');
+    const companyIdControl = this.documentForm.get('company_id');
+    const signersControl = this.documentForm.get('signers');
+
+    if (this.isEditMode) {
+      // En modo edición, estos campos no son requeridos
+      pdfUrlControl?.clearValidators();
+      companyIdControl?.clearValidators();
+      signersControl?.clearValidators();
+    } else {
+      // En modo creación, aplicar validaciones completas
+      pdfUrlControl?.setValidators([Validators.required, this.pdfUrlValidator]);
+      companyIdControl?.setValidators([Validators.required]);
+      signersControl?.setValidators([Validators.minLength(1)]);
+    }
+
+    pdfUrlControl?.updateValueAndValidity();
+    companyIdControl?.updateValueAndValidity();
+    signersControl?.updateValueAndValidity();
   }
 
   private createSignerForm(): FormGroup {
@@ -159,41 +241,67 @@ export class DocumentFormComponent implements OnInit {
       this.submitting = true;
       const formValue = this.documentForm.value;
 
-      const documentData: DocumentCreateRequest = {
-        name: formValue.name.trim(),
-        pdf_url: formValue.pdf_url.trim(),
-        company_id: parseInt(formValue.company_id),
-        created_by: formValue.created_by.trim(),
-        signers: formValue.signers.map((signer: any) => ({
-          name: signer.name.trim(),
-          email: signer.email.trim().toLowerCase()
-        }))
-      };
+      if (this.isEditMode && this.documentId) {
+        // MODO EDICIÓN - Solo actualizar campos locales
+        const updateData = {
+          name: formValue.name.trim(),
+          created_by: formValue.created_by.trim()
+        };
 
-      this.documentService.createDocument(documentData).subscribe({
-        next: (document) => {
-          this.snackBar.open(
-            `Documento "${document.name}" creado exitosamente con ZapSign`,
-            'Cerrar',
-            { duration: 5000 }
-          );
-          this.router.navigate(['/documents']);
-        },
-        error: (error) => {
-          let errorMessage = 'Error al crear documento';
-
-          if (error.message.includes('ZapSign API Error')) {
-            errorMessage = 'Error al conectar con ZapSign. Verifique la URL del PDF y la configuración.';
-          } else if (error.message.includes('Bad Request')) {
-            errorMessage = 'Datos inválidos. Verifique todos los campos.';
+        this.documentService.updateDocument(this.documentId, updateData).subscribe({
+          next: (document) => {
+            this.snackBar.open(
+              `Documento "${document.name}" actualizado exitosamente`,
+              'Cerrar',
+              { duration: 5000 }
+            );
+            this.router.navigate(['/documents']);
+          },
+          error: (error) => {
+            this.snackBar.open(`Error al actualizar documento: ${error.message}`, 'Cerrar', {
+              duration: 8000
+            });
+            this.submitting = false;
           }
+        });
+      } else {
+        // MODO CREACIÓN - Integración con ZapSign
+        const documentData: DocumentCreateRequest = {
+          name: formValue.name.trim(),
+          pdf_url: formValue.pdf_url.trim(),
+          company_id: parseInt(formValue.company_id),
+          created_by: formValue.created_by.trim(),
+          signers: formValue.signers.map((signer: any) => ({
+            name: signer.name.trim(),
+            email: signer.email.trim().toLowerCase()
+          }))
+        };
 
-          this.snackBar.open(`${errorMessage}: ${error.message}`, 'Cerrar', {
-            duration: 8000
-          });
-          this.submitting = false;
-        }
-      });
+        this.documentService.createDocument(documentData).subscribe({
+          next: (document) => {
+            this.snackBar.open(
+              `Documento "${document.name}" creado exitosamente con ZapSign`,
+              'Cerrar',
+              { duration: 5000 }
+            );
+            this.router.navigate(['/documents']);
+          },
+          error: (error) => {
+            let errorMessage = 'Error al crear documento';
+
+            if (error.message.includes('ZapSign API Error')) {
+              errorMessage = 'Error al conectar con ZapSign. Verifique la URL del PDF y la configuración.';
+            } else if (error.message.includes('Bad Request')) {
+              errorMessage = 'Datos inválidos. Verifique todos los campos.';
+            }
+
+            this.snackBar.open(`${errorMessage}: ${error.message}`, 'Cerrar', {
+              duration: 8000
+            });
+            this.submitting = false;
+          }
+        });
+      }
     } else {
       this.markFormGroupTouched(this.documentForm);
       this.snackBar.open('Por favor complete todos los campos requeridos', 'Cerrar', {
@@ -237,6 +345,16 @@ export class DocumentFormComponent implements OnInit {
         name: 'Juan Pérez',
         email: 'juan.perez@example.com'
       });
+    }
+  }
+
+  // AGREGADO: Método para colores de estado de firmantes
+  getSignerStatusColor(status: string): string {
+    switch (status) {
+      case 'SIGNED': return 'primary';
+      case 'PENDING': return 'accent';
+      case 'CANCELLED': return 'warn';
+      default: return '';
     }
   }
 }
