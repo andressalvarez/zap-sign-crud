@@ -1,1 +1,170 @@
-<p>document-form works!</p>
+<div class="document-form-container">
+  <!-- Header -->
+  <mat-card class="header-card">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>add_circle</mat-icon>
+        Crear Nuevo Documento
+      </mat-card-title>
+      <mat-card-subtitle>
+        Complete la información para crear un documento con ZapSign
+      </mat-card-subtitle>
+    </mat-card-header>
+  </mat-card>
+
+  <!-- Form -->
+  <form [formGroup]="documentForm" (ngSubmit)="onSubmit()" class="document-form">
+    <mat-card class="form-card">
+      <mat-card-content>
+        <!-- Document Information Section -->
+        <div class="form-section">
+          <h3 class="section-title">
+            <mat-icon>description</mat-icon>
+            Información del Documento
+          </h3>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Nombre del documento</mat-label>
+              <input matInput formControlName="name" placeholder="Ej: Contrato de Servicios 2024">
+              <mat-icon matSuffix>title</mat-icon>
+              <mat-error *ngIf="hasFieldError('name')">
+                {{ getFieldError('name') }}
+              </mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>URL del archivo PDF</mat-label>
+              <input matInput formControlName="pdf_url" placeholder="https://ejemplo.com/documento.pdf">
+              <mat-icon matSuffix>link</mat-icon>
+              <mat-error *ngIf="hasFieldError('pdf_url')">
+                {{ getFieldError('pdf_url') }}
+              </mat-error>
+              <mat-hint>El documento debe ser un archivo PDF accesible públicamente</mat-hint>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="half-width">
+              <mat-label>Empresa</mat-label>
+              <mat-select formControlName="company_id">
+                <mat-option *ngFor="let company of companies" [value]="company.id">
+                  {{ company.name }}
+                </mat-option>
+              </mat-select>
+              <mat-icon matSuffix>business</mat-icon>
+              <mat-error *ngIf="hasFieldError('company_id')">
+                {{ getFieldError('company_id') }}
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="half-width">
+              <mat-label>Creado por</mat-label>
+              <input matInput formControlName="created_by" placeholder="Su nombre">
+              <mat-icon matSuffix>person</mat-icon>
+              <mat-error *ngIf="hasFieldError('created_by')">
+                {{ getFieldError('created_by') }}
+              </mat-error>
+            </mat-form-field>
+          </div>
+        </div>
+
+        <!-- Signers Section -->
+        <div class="form-section">
+          <div class="section-header">
+            <h3 class="section-title">
+              <mat-icon>people</mat-icon>
+              Firmantes ({{ signers.length }})
+            </h3>
+            <button type="button" mat-raised-button color="accent" (click)="addSigner()"
+                    [disabled]="signers.length >= 10">
+              <mat-icon>person_add</mat-icon>
+              Agregar Firmante
+            </button>
+          </div>
+
+          <div class="signers-container" formArrayName="signers">
+            <mat-card *ngFor="let signerGroup of signers.controls; let i = index" 
+                      class="signer-card" [formGroupName]="i">
+              <mat-card-header>
+                <mat-card-title class="signer-title">
+                  <mat-icon>person</mat-icon>
+                  Firmante {{ i + 1 }}
+                </mat-card-title>
+                <button type="button" mat-icon-button color="warn" (click)="removeSigner(i)"
+                        [disabled]="signers.length === 1" matTooltip="Eliminar firmante">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </mat-card-header>
+
+              <mat-card-content>
+                <div class="signer-form-row">
+                  <mat-form-field appearance="outline" class="half-width">
+                    <mat-label>Nombre completo</mat-label>
+                    <input matInput formControlName="name" placeholder="Ej: Juan Pérez">
+                    <mat-icon matSuffix>badge</mat-icon>
+                    <mat-error *ngIf="hasSignerFieldError(i, 'name')">
+                      {{ getSignerFieldError(i, 'name') }}
+                    </mat-error>
+                  </mat-form-field>
+
+                  <mat-form-field appearance="outline" class="half-width">
+                    <mat-label>Email</mat-label>
+                    <input matInput formControlName="email" type="email" 
+                           placeholder="juan.perez@ejemplo.com">
+                    <mat-icon matSuffix>email</mat-icon>
+                    <mat-error *ngIf="hasSignerFieldError(i, 'email')">
+                      {{ getSignerFieldError(i, 'email') }}
+                    </mat-error>
+                  </mat-form-field>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </div>
+        </div>
+
+        <!-- Helper Section -->
+        <div class="form-section">
+          <mat-card class="helper-card">
+            <mat-card-content>
+              <div class="helper-content">
+                <mat-icon class="helper-icon">info</mat-icon>
+                <div class="helper-text">
+                  <h4>¿Necesitas datos de prueba?</h4>
+                  <p>Usa el botón de ejemplo para llenar el formulario con datos de prueba válidos.</p>
+                  <button type="button" mat-stroked-button (click)="fillExampleData()">
+                    <mat-icon>auto_fix_high</mat-icon>
+                    Llenar con datos de ejemplo
+                  </button>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </mat-card-content>
+
+      <!-- Actions -->
+      <mat-card-actions align="end" class="form-actions">
+        <button type="button" mat-button (click)="onCancel()" [disabled]="submitting">
+          <mat-icon>cancel</mat-icon>
+          Cancelar
+        </button>
+        
+        <button type="submit" mat-raised-button color="primary" 
+                [disabled]="documentForm.invalid || submitting">
+          <mat-spinner *ngIf="submitting" diameter="20" class="button-spinner"></mat-spinner>
+          <mat-icon *ngIf="!submitting">save</mat-icon>
+          {{ submitting ? 'Creando...' : 'Crear Documento' }}
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </form>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-container">
+    <mat-spinner></mat-spinner>
+    <p>Cargando información...</p>
+  </div>
+</div>

@@ -13,17 +13,17 @@ import { DocumentListItem } from '../../../../core/models/document.interface';
 })
 export class DocumentListComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
-  
+
   documents: DocumentListItem[] = [];
   loading$ = this.documentService.loading$;
-  
+
   displayedColumns: string[] = [
-    'name', 
-    'status', 
-    'company_name', 
-    'signers_count', 
-    'created_by', 
-    'created_at', 
+    'name',
+    'status',
+    'company_name',
+    'signers_count',
+    'created_by',
+    'created_at',
     'actions'
   ];
 
@@ -46,12 +46,12 @@ export class DocumentListComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadDocuments();
-    
+
     // Subscribe to documents changes
     this.documentService.documents$
       .pipe(takeUntil(this.destroy$))
       .subscribe(documents => {
-        this.documents = this.selectedStatus 
+        this.documents = this.selectedStatus
           ? documents.filter(doc => doc.status === this.selectedStatus)
           : documents;
       });
@@ -79,7 +79,7 @@ export class DocumentListComponent implements OnInit, OnDestroy {
 
   onStatusFilterChange(): void {
     const allDocuments = this.documentService.documents$.value;
-    this.documents = this.selectedStatus 
+    this.documents = this.selectedStatus
       ? allDocuments.filter(doc => doc.status === this.selectedStatus)
       : allDocuments;
   }
@@ -100,15 +100,15 @@ export class DocumentListComponent implements OnInit, OnDestroy {
     this.documentService.updateDocumentStatus(document.id).subscribe({
       next: (updatedDoc) => {
         this.snackBar.open(
-          `Estado actualizado: ${updatedDoc.status}`, 
-          'Cerrar', 
+          `Estado actualizado: ${updatedDoc.status}`,
+          'Cerrar',
           { duration: 3000 }
         );
       },
       error: (error) => {
         this.snackBar.open(
-          `Error al actualizar estado: ${error.message}`, 
-          'Cerrar', 
+          `Error al actualizar estado: ${error.message}`,
+          'Cerrar',
           { duration: 5000 }
         );
       }

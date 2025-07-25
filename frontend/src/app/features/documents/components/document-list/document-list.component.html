@@ -10,7 +10,7 @@
         Administra documentos y firmas electrónicas con ZapSign
       </mat-card-subtitle>
     </mat-card-header>
-    
+
     <mat-card-actions align="end">
       <button mat-raised-button color="primary" (click)="createDocument()">
         <mat-icon>add</mat-icon>
@@ -34,7 +34,7 @@
             </mat-option>
           </mat-select>
         </mat-form-field>
-        
+
         <div class="document-count">
           <mat-chip-set>
             <mat-chip color="primary">
@@ -57,7 +57,7 @@
   <mat-card class="table-card" *ngIf="!(loading$ | async)">
     <div class="table-container">
       <table mat-table [dataSource]="documents" class="documents-table">
-        
+
         <!-- Name Column -->
         <ng-container matColumnDef="name">
           <th mat-header-cell *matHeaderCellDef>Nombre</th>
@@ -127,25 +127,25 @@
               <button mat-icon-button [matMenuTriggerFor]="actionsMenu" matTooltip="Más opciones">
                 <mat-icon>more_vert</mat-icon>
               </button>
-              
+
               <mat-menu #actionsMenu="matMenu">
                 <button mat-menu-item (click)="viewDocument(document.id)">
                   <mat-icon>visibility</mat-icon>
                   <span>Ver detalles</span>
                 </button>
-                
+
                 <button mat-menu-item (click)="editDocument(document.id)">
                   <mat-icon>edit</mat-icon>
                   <span>Editar</span>
                 </button>
-                
+
                 <button mat-menu-item (click)="updateStatus(document)">
                   <mat-icon>sync</mat-icon>
                   <span>Actualizar estado</span>
                 </button>
-                
+
                 <mat-divider></mat-divider>
-                
+
                 <button mat-menu-item (click)="deleteDocument(document)" class="delete-action">
                   <mat-icon color="warn">delete</mat-icon>
                   <span>Eliminar</span>

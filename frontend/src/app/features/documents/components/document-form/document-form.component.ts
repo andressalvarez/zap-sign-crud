@@ -48,12 +48,12 @@ export class DocumentFormComponent implements OnInit {
 
   private pdfUrlValidator(control: any) {
     if (!control.value) return null;
-    
+
     const url = control.value.toLowerCase();
     if (!url.includes('.pdf')) {
       return { invalidPdfUrl: true };
     }
-    
+
     // Basic URL validation
     try {
       new URL(control.value);
@@ -121,7 +121,7 @@ export class DocumentFormComponent implements OnInit {
   getSignerFieldError(signerIndex: number, fieldName: string): string {
     const signerGroup = this.getSignerFormGroup(signerIndex);
     const field = signerGroup.get(fieldName);
-    
+
     if (field?.errors && field.touched) {
       if (field.errors['required']) return `${fieldName} es requerido`;
       if (field.errors['email']) return 'Email inválido';
@@ -158,7 +158,7 @@ export class DocumentFormComponent implements OnInit {
 
       this.submitting = true;
       const formValue = this.documentForm.value;
-      
+
       const documentData: DocumentCreateRequest = {
         name: formValue.name.trim(),
         pdf_url: formValue.pdf_url.trim(),
@@ -173,21 +173,21 @@ export class DocumentFormComponent implements OnInit {
       this.documentService.createDocument(documentData).subscribe({
         next: (document) => {
           this.snackBar.open(
-            `Documento "${document.name}" creado exitosamente con ZapSign`, 
-            'Cerrar', 
+            `Documento "${document.name}" creado exitosamente con ZapSign`,
+            'Cerrar',
             { duration: 5000 }
           );
           this.router.navigate(['/documents']);
         },
         error: (error) => {
           let errorMessage = 'Error al crear documento';
-          
+
           if (error.message.includes('ZapSign API Error')) {
             errorMessage = 'Error al conectar con ZapSign. Verifique la URL del PDF y la configuración.';
           } else if (error.message.includes('Bad Request')) {
             errorMessage = 'Datos inválidos. Verifique todos los campos.';
           }
-          
+
           this.snackBar.open(`${errorMessage}: ${error.message}`, 'Cerrar', {
             duration: 8000
           });
