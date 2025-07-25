@@ -1,0 +1,238 @@
+<div class="document-detail-container">
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-container">
+    <mat-spinner></mat-spinner>
+    <p>Cargando documento...</p>
+  </div>
+
+  <!-- Document Detail -->
+  <div *ngIf="!loading && document" class="document-content">
+    <!-- Header -->
+    <mat-card class="header-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>description</mat-icon>
+          {{ document.name }}
+        </mat-card-title>
+        <mat-card-subtitle>
+          Documento #{{ document.id }} • {{ formatDate(document.created_at) }}
+        </mat-card-subtitle>
+      </mat-card-header>
+
+      <mat-card-actions align="end">
+        <button mat-button (click)="goBack()">
+          <mat-icon>arrow_back</mat-icon>
+          Volver
+        </button>
+        
+        <button mat-raised-button color="accent" (click)="updateStatus()" [disabled]="updating">
+          <mat-spinner *ngIf="updating" diameter="18" class="button-spinner"></mat-spinner>
+          <mat-icon *ngIf="!updating">sync</mat-icon>
+          {{ updating ? 'Actualizando...' : 'Actualizar Estado' }}
+        </button>
+        
+        <button mat-icon-button [matMenuTriggerFor]="actionsMenu">
+          <mat-icon>more_vert</mat-icon>
+        </button>
+        
+        <mat-menu #actionsMenu="matMenu">
+          <button mat-menu-item (click)="editDocument()">
+            <mat-icon>edit</mat-icon>
+            <span>Editar</span>
+          </button>
+          
+          <button mat-menu-item (click)="openPdfUrl()">
+            <mat-icon>open_in_new</mat-icon>
+            <span>Ver en ZapSign</span>
+          </button>
+          
+          <mat-divider></mat-divider>
+          
+          <button mat-menu-item (click)="deleteDocument()" class="delete-action">
+            <mat-icon color="warn">delete</mat-icon>
+            <span>Eliminar</span>
+          </button>
+        </mat-menu>
+      </mat-card-actions>
+    </mat-card>
+
+    <!-- Status and Progress -->
+    <mat-card class="status-card">
+      <mat-card-content>
+        <div class="status-section">
+          <div class="status-info">
+            <div class="status-item">
+              <mat-icon>info</mat-icon>
+              <div class="status-details">
+                <span class="status-label">Estado del Documento</span>
+                <mat-chip [color]="getStatusColor(document.status)">
+                  {{ document.status }}
+                </mat-chip>
+              </div>
+            </div>
+
+            <div class="status-item">
+              <mat-icon>timeline</mat-icon>
+              <div class="status-details">
+                <span class="status-label">Progreso de Firmas</span>
+                <div class="progress-info">
+                  <span class="progress-text">
+                    {{ getCompletedSignersCount() }} de {{ getTotalSignersCount() }} firmado(s)
+                  </span>
+                  <mat-progress-bar 
+                    mode="determinate" 
+                    [value]="getProgressPercentage()"
+                    class="progress-bar">
+                  </mat-progress-bar>
+                  <span class="progress-percentage">{{ getProgressPercentage() }}%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Document Information -->
+    <mat-card class="info-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>info_outline</mat-icon>
+          Información del Documento
+        </mat-card-title>
+      </mat-card-header>
+
+      <mat-card-content>
+        <div class="info-grid">
+          <div class="info-item">
+            <mat-icon>business</mat-icon>
+            <div class="info-content">
+              <span class="info-label">Empresa</span>
+              <span class="info-value">{{ document.company.name }}</span>
+            </div>
+          </div>
+
+          <div class="info-item">
+            <mat-icon>person</mat-icon>
+            <div class="info-content">
+              <span class="info-label">Creado por</span>
+              <span class="info-value">{{ document.created_by }}</span>
+            </div>
+          </div>
+
+          <div class="info-item">
+            <mat-icon>schedule</mat-icon>
+            <div class="info-content">
+              <span class="info-label">Fecha de creación</span>
+              <span class="info-value">{{ formatDate(document.created_at) }}</span>
+            </div>
+          </div>
+
+          <div class="info-item">
+            <mat-icon>update</mat-icon>
+            <div class="info-content">
+              <span class="info-label">Última actualización</span>
+              <span class="info-value">{{ formatDate(document.last_updated_at) }}</span>
+            </div>
+          </div>
+
+          <div class="info-item" *ngIf="document.open_id">
+            <mat-icon>tag</mat-icon>
+            <div class="info-content">
+              <span class="info-label">ZapSign ID</span>
+              <span class="info-value">#{{ document.open_id }}</span>
+            </div>
+          </div>
+
+          <div class="info-item" *ngIf="document.token">
+            <mat-icon>vpn_key</mat-icon>
+            <div class="info-content">
+              <span class="info-label">Token</span>
+              <span class="info-value token-value">{{ document.token }}</span>
+            </div>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Signers -->
+    <mat-card class="signers-card">
+      <mat-card-header>
+        <mat-card-title>
+          <mat-icon>people</mat-icon>
+          Firmantes ({{ document.signers.length }})
+        </mat-card-title>
+        <mat-card-subtitle>
+          Estado de las firmas del documento
+        </mat-card-subtitle>
+      </mat-card-header>
+
+      <mat-card-content>
+        <div class="signers-list" *ngIf="document.signers.length > 0; else noSigners">
+          <div *ngFor="let signer of document.signers; let i = index" class="signer-item">
+            <div class="signer-avatar">
+              <mat-icon>person</mat-icon>
+            </div>
+            
+            <div class="signer-info">
+              <div class="signer-name">{{ signer.name }}</div>
+              <div class="signer-email">{{ signer.email }}</div>
+              <div class="signer-meta" *ngIf="signer.external_id">
+                <mat-icon>tag</mat-icon>
+                <span>ID: {{ signer.external_id }}</span>
+              </div>
+            </div>
+
+            <div class="signer-status">
+              <mat-chip [color]="getSignerStatusColor(signer.status)">
+                <mat-icon>
+                  {{ signer.status === 'SIGNED' ? 'check_circle' : 
+                     signer.status === 'PENDING' ? 'schedule' : 'cancel' }}
+                </mat-icon>
+                {{ signer.status }}
+              </mat-chip>
+            </div>
+          </div>
+        </div>
+
+        <ng-template #noSigners>
+          <div class="no-signers">
+            <mat-icon>people_outline</mat-icon>
+            <p>No hay firmantes asignados a este documento</p>
+          </div>
+        </ng-template>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Summary Stats -->
+    <mat-card class="stats-card">
+      <mat-card-content>
+        <div class="stats-grid">
+          <div class="stat-item">
+            <mat-icon class="stat-icon pending">schedule</mat-icon>
+            <div class="stat-content">
+              <span class="stat-number">{{ getPendingSignersCount() }}</span>
+              <span class="stat-label">Pendientes</span>
+            </div>
+          </div>
+
+          <div class="stat-item">
+            <mat-icon class="stat-icon completed">check_circle</mat-icon>
+            <div class="stat-content">
+              <span class="stat-number">{{ getCompletedSignersCount() }}</span>
+              <span class="stat-label">Completados</span>
+            </div>
+          </div>
+
+          <div class="stat-item">
+            <mat-icon class="stat-icon total">people</mat-icon>
+            <div class="stat-content">
+              <span class="stat-number">{{ getTotalSignersCount() }}</span>
+              <span class="stat-label">Total</span>
+            </div>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>
