@@ -18,19 +18,7 @@
 make install
 ```
 
-**Windows - Opción 1 (Recomendada - PowerShell Automático):**
-```powershell
-.\install-simple.ps1
-```
-*Este script incluye:*
-- ✅ Elevación automática de permisos de administrador
-- ✅ Detección e inicio automático de Docker Desktop
-- ✅ Verificación completa del entorno
-- ✅ Instalación guiada paso a paso con mensajes claros
-- ✅ Apertura automática del navegador al finalizar
-- ✅ Compatible con Windows PowerShell (sin emojis problemáticos)
-
-**Windows - Opción 2 (Manual - Git Bash/PowerShell):**
+**Windows (Manual - Git Bash/PowerShell):**
 ```bash
 docker compose down -v --remove-orphans
 docker compose build --no-cache
@@ -52,6 +40,11 @@ docker compose exec -T backend python init_data.py
 - **🌐 Frontend**: http://localhost:4200
 - **⚡ Backend API**: http://localhost:8000
 - **📚 API Docs**: http://localhost:8000/api/docs/
+
+### **🎥 Video Demostración:**
+[![ZapSign CRUD Demo](https://img.youtube.com/vi/h5fYuS7rvso/maxresdefault.jpg)](https://youtu.be/h5fYuS7rvso)
+
+**Ver instalación y funcionalidades en acción**: [https://youtu.be/h5fYuS7rvso](https://youtu.be/h5fYuS7rvso)
 
 ### **Comandos Adicionales:**
 
