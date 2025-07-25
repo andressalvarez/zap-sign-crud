@@ -87,7 +87,7 @@ class ZapSignService:
 
             logger.info(f"ZapSign API response status: {response.status_code}")
 
-            if response.status_code == 201:
+            if response.status_code in [200, 201]:
                 logger.info("Document created successfully in ZapSign")
                 return response.json()
             else:

@@ -18,10 +18,21 @@
 make install
 ```
 
-**Windows (Git Bash/PowerShell):**
+**Windows - Opción 1 (Recomendada - PowerShell Automático):**
+```powershell
+.\install.ps1
+```
+*Este script incluye:*
+- ✅ Elevación automática de permisos de administrador
+- ✅ Detección e inicio automático de Docker Desktop
+- ✅ Verificación completa del entorno
+- ✅ Instalación guiada paso a paso
+- ✅ Apertura automática del navegador al finalizar
+
+**Windows - Opción 2 (Manual - Git Bash/PowerShell):**
 ```bash
 docker compose down -v --remove-orphans
-docker compose build --no-cache  
+docker compose build --no-cache
 docker compose up -d
 # Esperar 30 segundos
 docker compose exec -T backend python manage.py migrate

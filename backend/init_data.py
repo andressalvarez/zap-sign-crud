@@ -20,13 +20,19 @@ def create_initial_data():
 
     print("🚀 Inicializando datos básicos...")
 
-    # Crear company con token real
+    # Crear company con token real actualizado
     company, created = Company.objects.get_or_create(
         name="ZapSign Demo Company",
         defaults={
-            "api_token": "fa895995-6797-49fe-8561-35102d37ba9bf44a60bf-0776-4dac-aeb6-cb97f4fc7632"
+            "api_token": "0de33489-0908-42e0-99a7-299c513ac50b090986b2-8d4b-4ec5-b8f5-32d3bd5f67af"
         },
     )
+
+    # Si ya existe, actualizar el token
+    if not created and company.api_token != "0de33489-0908-42e0-99a7-299c513ac50b090986b2-8d4b-4ec5-b8f5-32d3bd5f67af":
+        company.api_token = "0de33489-0908-42e0-99a7-299c513ac50b090986b2-8d4b-4ec5-b8f5-32d3bd5f67af"
+        company.save()
+        print(f"🔄 Token actualizado para: {company.name}")
 
     if created:
         print(f"✅ Company creada: {company.name} (ID: {company.id})")

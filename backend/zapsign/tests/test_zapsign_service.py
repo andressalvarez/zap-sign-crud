@@ -76,7 +76,7 @@ class ZapSignServiceRealTest(TestCase):
         """Test successful document creation with real sandbox URL"""
         # Mock successful response
         mock_response = Mock()
-        mock_response.status_code = 201
+        mock_response.status_code = 200
         mock_response.json.return_value = {
             "open_id": 12345,
             "token": "doc-token-123",
@@ -192,7 +192,7 @@ class ZapSignServiceRealTest(TestCase):
     def test_create_document_json_decode_error(self, mock_post):
         """Test document creation with JSON decode error"""
         mock_response = Mock()
-        mock_response.status_code = 201
+        mock_response.status_code = 200
         mock_response.json.side_effect = json.JSONDecodeError("Invalid JSON", "", 0)
         mock_response.text = "Invalid response"
         mock_post.return_value = mock_response
@@ -212,7 +212,7 @@ class ZapSignServiceRealTest(TestCase):
     def test_create_document_payload_structure(self, mock_post):
         """Test that the payload sent to ZapSign has correct structure"""
         mock_response = Mock()
-        mock_response.status_code = 201
+        mock_response.status_code = 200
         mock_response.json.return_value = {"open_id": 123}
         mock_post.return_value = mock_response
 
@@ -251,7 +251,7 @@ class ZapSignServiceRealTest(TestCase):
 
         with patch("requests.post") as mock_post:
             mock_response = Mock()
-            mock_response.status_code = 201
+            mock_response.status_code = 200
             mock_response.json.return_value = {"open_id": 123}
             mock_post.return_value = mock_response
 
