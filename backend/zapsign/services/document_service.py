@@ -70,6 +70,8 @@ class DocumentService:
             api_document_data = {
                 "name": document_data["name"],
                 "pdf_url": document_data["pdf_url"],
+                "document_id": document.id,  # AGREGADO: para external_id
+                "created_by": created_by,  # AGREGADO: para created_by
                 "signers": [
                     {"name": signer.name, "email": signer.email} for signer in signers
                 ],
