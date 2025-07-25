@@ -15,7 +15,7 @@ export class DocumentFormComponent implements OnInit {
   companies: Company[] = [];
   loading = false;
   submitting = false;
-  
+
   // AGREGADO: Modo edición
   isEditMode = false;
   documentId: number | null = null;
@@ -79,7 +79,7 @@ export class DocumentFormComponent implements OnInit {
     // Llenar firmantes existentes
     const signersArray = this.signers;
     signersArray.clear();
-    
+
     document.signers.forEach(signer => {
       signersArray.push(this.fb.group({
         name: [signer.name, [Validators.required, Validators.minLength(2)]],
@@ -92,7 +92,7 @@ export class DocumentFormComponent implements OnInit {
     return this.fb.group({
       name: ['', [Validators.required, Validators.minLength(3)]],
       pdf_url: [''], // Se validará condicionalmente en ngOnInit
-      company_id: [''], // Se validará condicionalmente en ngOnInit  
+      company_id: [''], // Se validará condicionalmente en ngOnInit
       created_by: ['', [Validators.required]],
       signers: this.fb.array([this.createSignerForm()], [Validators.minLength(1)])
     });

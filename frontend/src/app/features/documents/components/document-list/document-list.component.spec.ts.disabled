@@ -1,0 +1,62 @@
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideRouter } from '@angular/router';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatDialog } from '@angular/material/dialog';
+import { ActivatedRoute } from '@angular/router';
+import { of } from 'rxjs';
+
+import { DocumentListComponent } from './document-list.component';
+import { DocumentService } from '../../services/document.service';
+
+describe('DocumentListComponent', () => {
+  let component: DocumentListComponent;
+  let fixture: ComponentFixture<DocumentListComponent>;
+
+  beforeEach(async () => {
+    const documentServiceSpy = jasmine.createSpyObj('DocumentService', [
+      'getDocuments', 'getCompanies'
+    ]);
+    const snackBarSpy = jasmine.createSpyObj('MatSnackBar', ['open']);
+    const dialogSpy = jasmine.createSpyObj('MatDialog', ['open']);
+
+    await TestBed.configureTestingModule({
+      imports: [
+        DocumentListComponent,
+        BrowserAnimationsModule
+      ],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter(),
+        { provide: DocumentService, useValue: documentServiceSpy },
+        { provide: MatSnackBar, useValue: snackBarSpy },
+        { provide: MatDialog, useValue: dialogSpy },
+        { provide: ActivatedRoute, useValue: { queryParams: of({}) } }
+      ]
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(DocumentListComponent);
+    component = fixture.componentInstance;
+
+    const documentService = TestBed.inject(DocumentService) as jasmine.SpyObj<DocumentService>;
+    documentService.getDocuments.and.returnValue(of({
+      results: [],
+      count: 0,
+      next: null,
+      previous: null
+    }));
+    documentService.getCompanies.and.returnValue(of({
+      results: [],
+      count: 0,
+      next: null,
+      previous: null
+    }));
+  });
+
+  it('should create', () => {
+    expect(component).toBeTruthy();
+  });
+});

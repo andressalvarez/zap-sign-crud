@@ -1,39 +1,6 @@
 <div class="app-container">
-  <!-- Main Toolbar -->
-  <mat-toolbar color="primary" class="app-toolbar">
-    <div class="toolbar-content">
-      <div class="toolbar-left">
-        <mat-icon class="app-icon">description</mat-icon>
-        <span class="app-title">ZapSign CRUD</span>
-      </div>
-
-      <div class="toolbar-right">
-        <button mat-icon-button routerLink="/documents" matTooltip="Documentos">
-          <mat-icon>home</mat-icon>
-        </button>
-
-        <button mat-icon-button routerLink="/documents/create" matTooltip="Crear Documento">
-          <mat-icon>add</mat-icon>
-        </button>
-      </div>
-    </div>
-  </mat-toolbar>
-
   <!-- Main Content -->
   <main class="app-content">
     <router-outlet></router-outlet>
   </main>
-
-  <!-- Footer -->
-  <footer class="app-footer">
-    <div class="footer-content">
-      <span>ZapSign CRUD © 2024 - Powered by Angular & Django</span>
-      <div class="footer-links">
-        <a href="https://docs.zapsign.com.br/" target="_blank" mat-button>
-          <mat-icon>help</mat-icon>
-          API Docs
-        </a>
-      </div>
-    </div>
-  </footer>
 </div>

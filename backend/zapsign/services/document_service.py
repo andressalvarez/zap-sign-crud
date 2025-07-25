@@ -29,34 +29,38 @@ class DocumentService:
         created_by: str,
     ) -> Document:
         """
-        Create a document with signers and integrate with ZapSign API
+        Create a document with signers, integrating with ZapSign API
 
         Args:
             company_id: ID of the company
-            document_data: Document information (name, pdf_url)
-            signers_data: List of signer information (name, email)
+            document_data: Document data (name, pdf_url)
+            signers_data: List of signer data (name, email)
             created_by: User who created the document
 
         Returns:
-            Created Document instance
+            Created Document instance with ZapSign data
 
         Raises:
-            ZapSignAPIException: If ZapSign API fails
+            ValueError: If company doesn't exist or validation fails
+            ZapSignAPIException: If ZapSign API call fails
         """
         try:
-            # Get company
-            company = Company.objects.get(id=company_id)
+            # Get company and validate
+            try:
+                company = Company.objects.get(id=company_id)
+            except Company.DoesNotExist:
+                raise ValueError(f"Company with ID {company_id} does not exist")
 
-            # Create document stub with PENDING_API status
+            # Create document in local DB first (without ZapSign data)
             document = Document.objects.create(
                 name=document_data["name"],
                 company=company,
                 created_by=created_by,
-                status="PENDING_API",
+                status="PENDING_API",  # Pending ZapSign API call
             )
 
-            # Create signers in local DB first
-            signers = []
+            # Create signers in local DB
+            signer_objects = []
             for signer_data in signers_data:
                 signer = Signer.objects.create(
                     name=signer_data["name"],
@@ -64,40 +68,36 @@ class DocumentService:
                     document=document,
                     status="PENDING",
                 )
-                signers.append(signer)
+                signer_objects.append(signer)
 
             # Prepare data for ZapSign API
-            api_document_data = {
+            zapsign_data = {
                 "name": document_data["name"],
                 "pdf_url": document_data["pdf_url"],
-                "document_id": document.id,  # AGREGADO: para external_id
-                "created_by": created_by,  # AGREGADO: para created_by
-                "signers": [
-                    {"name": signer.name, "email": signer.email} for signer in signers
-                ],
+                "signers": signers_data,
             }
 
             # Call ZapSign API
-            logger.info(f"Calling ZapSign API for document: {document.name}")
+            logger.info(f"Creating document in ZapSign: {document.name}")
             zapsign_response = self.zapsign_service.create_document(
-                company, api_document_data
+                company, zapsign_data
             )
 
             # Update document with ZapSign response data
-            document.open_id = zapsign_response.get("open_id")
             document.token = zapsign_response.get("token")
-            document.external_id = zapsign_response.get("external_id")
-            document.status = zapsign_response.get("status", "PENDING")
+            document.open_id = zapsign_response.get("open_id")
+            document.external_id = zapsign_response.get("external_id", "")
+            document.status = "PENDING"  # Document created in ZapSign
             document.save()
 
             # Update signers with ZapSign data if available
             zapsign_signers = zapsign_response.get("signers", [])
-            for i, signer in enumerate(signers):
+            for i, signer_obj in enumerate(signer_objects):
                 if i < len(zapsign_signers):
                     zapsign_signer = zapsign_signers[i]
-                    signer.token = zapsign_signer.get("token", "")
-                    signer.external_id = zapsign_signer.get("external_id", "")
-                    signer.save()
+                    signer_obj.token = zapsign_signer.get("token", "")
+                    signer_obj.external_id = zapsign_signer.get("external_id", "")
+                    signer_obj.save()
 
             logger.info(
                 f"Document created successfully: {document.name} (ID: {document.id})"
@@ -107,54 +107,13 @@ class DocumentService:
         except Company.DoesNotExist:
             logger.error(f"Company with ID {company_id} does not exist")
             raise ValueError(f"Company with ID {company_id} does not exist")
-        except ZapSignAPIException as e:
-            logger.error(f"ZapSign API error: {str(e)}")
-            # Update document status to indicate API failure
-            document.status = "API_ERROR"
-            document.save()
+        except ZapSignAPIException:
+            # Re-raise ZapSign API exceptions
+            logger.error("ZapSign API error occurred during document creation")
             raise
         except Exception as e:
             logger.error(f"Unexpected error creating document: {str(e)}")
             raise
-
-    def get_document_with_signers(self, document_id: int) -> Document:
-        """
-        Get document with related signers
-
-        Args:
-            document_id: ID of the document
-
-        Returns:
-            Document instance with prefetched signers
-        """
-        try:
-            return (
-                Document.objects.select_related("company")
-                .prefetch_related("signers")
-                .get(id=document_id)
-            )
-        except Document.DoesNotExist:
-            logger.error(f"Document with ID {document_id} does not exist")
-            raise ValueError(f"Document with ID {document_id} does not exist")
-
-    def list_documents(self, company_id: int = None) -> List[Document]:
-        """
-        List all documents, optionally filtered by company
-
-        Args:
-            company_id: Optional company ID to filter by
-
-        Returns:
-            List of Document instances
-        """
-        queryset = Document.objects.select_related("company").prefetch_related(
-            "signers"
-        )
-
-        if company_id:
-            queryset = queryset.filter(company_id=company_id)
-
-        return list(queryset.order_by("-created_at"))
 
     def update_document_status(self, document_id: int) -> Document:
         """
@@ -165,27 +124,32 @@ class DocumentService:
 
         Returns:
             Updated Document instance
+
+        Raises:
+            ValueError: If document doesn't exist
         """
-        document = self.get_document_with_signers(document_id)
+        try:
+            document = Document.objects.get(id=document_id)
+        except Document.DoesNotExist:
+            raise ValueError(f"Document with ID {document_id} does not exist")
 
-        if not document.token:
-            logger.warning(f"Document {document_id} has no ZapSign token")
-            return document
-
-        # Fetch status from ZapSign API
-        status_data = self.zapsign_service.get_document_status(
-            document.company, document.token
-        )
-
-        if status_data:
-            # Update document status
-            old_status = document.status
-            document.status = status_data.get("status", document.status)
-
-            if old_status != document.status:
-                document.save()
-                logger.info(
-                    f"Document {document_id} status updated: {old_status} -> {document.status}"
+        try:
+            # Get status from ZapSign API
+            if document.token:
+                status_data = self.zapsign_service.get_document_status(
+                    document.company, document.token
                 )
 
-        return document
+                if status_data:
+                    # Update document status
+                    document.status = status_data.get("status", document.status)
+                    document.save()
+                    logger.info(
+                        f"Updated document {document_id} status to {document.status}"
+                    )
+
+            return document
+
+        except Exception as e:
+            logger.error(f"Error updating document status: {str(e)}")
+            raise

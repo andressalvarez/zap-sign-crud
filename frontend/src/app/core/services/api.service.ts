@@ -1,7 +1,8 @@
-import { Injectable } from '@angular/core';
+import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { HttpClient, HttpHeaders, HttpParams, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
-import { catchError, retry } from 'rxjs/operators';
+import { catchError, retry, tap } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 
 export interface ApiResponse<T> {
@@ -15,19 +16,42 @@ export interface ApiResponse<T> {
   providedIn: 'root'
 })
 export class ApiService {
-  private readonly baseUrl = environment.apiUrl || 'http://localhost:8000/api';
+  private readonly baseUrl: string;
 
   private defaultHeaders = new HttpHeaders({
     'Content-Type': 'application/json'
   });
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    @Inject(PLATFORM_ID) private platformId: Object
+  ) {
+    // En el browser usar localhost, en el server usar el nombre del servicio Docker
+    if (isPlatformBrowser(this.platformId)) {
+      this.baseUrl = environment.apiUrl || 'http://localhost:8000/api';
+    } else {
+      this.baseUrl = 'http://backend:8000/api';
+    }
+  }
+
+  /**
+   * Build normalized URL avoiding double slashes
+   */
+  private buildUrl(endpoint: string): string {
+    // Remove leading slash from endpoint if baseUrl already ends with slash
+    const cleanEndpoint = endpoint.startsWith('/') ? endpoint.substring(1) : endpoint;
+    // Ensure baseUrl ends with slash
+    const baseUrlWithSlash = this.baseUrl.endsWith('/') ? this.baseUrl : `${this.baseUrl}/`;
+    return `${baseUrlWithSlash}${cleanEndpoint}`;
+  }
 
   /**
    * GET request
    */
   get<T>(endpoint: string, params?: HttpParams): Observable<T> {
-    return this.http.get<T>(`${this.baseUrl}/${endpoint}`, {
+    const url = this.buildUrl(endpoint);
+
+    return this.http.get<T>(url, {
       headers: this.defaultHeaders,
       params
     }).pipe(
@@ -40,7 +64,7 @@ export class ApiService {
    * POST request
    */
   post<T>(endpoint: string, data: any): Observable<T> {
-    return this.http.post<T>(`${this.baseUrl}/${endpoint}`, data, {
+    return this.http.post<T>(this.buildUrl(endpoint), data, {
       headers: this.defaultHeaders
     }).pipe(
       catchError(this.handleError)
@@ -51,7 +75,7 @@ export class ApiService {
    * PUT request
    */
   put<T>(endpoint: string, data: any): Observable<T> {
-    return this.http.put<T>(`${this.baseUrl}/${endpoint}`, data, {
+    return this.http.put<T>(this.buildUrl(endpoint), data, {
       headers: this.defaultHeaders
     }).pipe(
       catchError(this.handleError)
@@ -62,7 +86,7 @@ export class ApiService {
    * PATCH request
    */
   patch<T>(endpoint: string, data: any): Observable<T> {
-    return this.http.patch<T>(`${this.baseUrl}/${endpoint}`, data, {
+    return this.http.patch<T>(this.buildUrl(endpoint), data, {
       headers: this.defaultHeaders
     }).pipe(
       catchError(this.handleError)
@@ -73,7 +97,7 @@ export class ApiService {
    * DELETE request
    */
   delete<T>(endpoint: string): Observable<T> {
-    return this.http.delete<T>(`${this.baseUrl}/${endpoint}`, {
+    return this.http.delete<T>(this.buildUrl(endpoint), {
       headers: this.defaultHeaders
     }).pipe(
       catchError(this.handleError)
@@ -86,7 +110,7 @@ export class ApiService {
   private handleError(error: HttpErrorResponse): Observable<never> {
     let errorMessage = 'An unknown error occurred';
 
-    if (error.error instanceof ErrorEvent) {
+    if (error.error instanceof Error) {
       // Client-side error
       errorMessage = `Client Error: ${error.error.message}`;
     } else {

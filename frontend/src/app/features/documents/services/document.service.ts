@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Observable, BehaviorSubject, tap } from 'rxjs';
+import { Observable, BehaviorSubject, tap, catchError } from 'rxjs';
 import { HttpParams } from '@angular/common/http';
 import { ApiService, ApiResponse } from '../../../core/services/api.service';
 import {
@@ -29,8 +29,9 @@ export class DocumentService {
     this.loadingSubject.next(true);
 
     let params = new HttpParams();
+
     if (companyId) {
-      params = params.set('company_id', companyId.toString());
+      params = params.set('company', companyId.toString());
     }
 
     return this.apiService.get<ApiResponse<DocumentListItem>>('documents/', params)
@@ -38,6 +39,10 @@ export class DocumentService {
         tap(response => {
           this.documentsSubject.next(response.results);
           this.loadingSubject.next(false);
+        }),
+        catchError(error => {
+          this.loadingSubject.next(false);
+          throw error;
         })
       );
   }

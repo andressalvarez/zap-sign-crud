@@ -175,9 +175,24 @@ class DocumentUpdateSerializer(serializers.ModelSerializer):
         return value
 
 
-class DocumentStatusUpdateSerializer(serializers.Serializer):
-    """Serializer for updating document status from ZapSign"""
+class DocumentStatusUpdateSerializer(serializers.ModelSerializer):
+    """Serializer for updating document status"""
 
-    def validate(self, data):
-        """This endpoint doesn't require input data"""
-        return data
+    class Meta:
+        model = Document
+        fields = ["status"]
+
+    def validate_status(self, value):
+        """Validate status value"""
+        valid_statuses = [
+            "PENDING_API",
+            "PENDING",
+            "COMPLETED",
+            "CANCELLED",
+            "API_ERROR",
+        ]
+        if value not in valid_statuses:
+            raise serializers.ValidationError(
+                f"Invalid status. Must be one of: {', '.join(valid_statuses)}"
+            )
+        return value

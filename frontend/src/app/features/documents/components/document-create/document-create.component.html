@@ -1,0 +1,256 @@
+<!-- Header con diseño moderno -->
+<div class="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+  <div class="bg-white border-b border-gray-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <!-- Logo y título -->
+        <div class="flex items-center space-x-4">
+          <div class="flex-shrink-0">
+            <div class="h-8 w-8 bg-gradient-to-r from-primary to-secondary rounded-lg flex items-center justify-center">
+              <span class="text-white font-bold text-sm">ZS</span>
+            </div>
+          </div>
+          <div>
+            <h1 class="text-xl font-semibold text-gray-900">ZapSign CRUD</h1>
+            <p class="text-sm text-gray-500">Gestión de Documentos y Firmas Electrónicas</p>
+          </div>
+        </div>
+
+        <!-- Notificaciones y perfil -->
+        <div class="flex items-center space-x-4">
+          <button class="p-2 text-gray-400 hover:text-gray-500 relative">
+            <mat-icon class="h-6 w-6">notifications</mat-icon>
+            <span class="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+              12
+            </span>
+          </button>
+          <div class="flex items-center space-x-2">
+            <div class="h-8 w-8 bg-gray-300 rounded-full"></div>
+            <span class="text-sm font-medium text-gray-700">Admin System</span>
+            <mat-icon class="h-4 w-4 text-gray-400">expand_more</mat-icon>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Crear Documento Section -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header de sección -->
+    <div class="mb-8">
+      <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-2xl p-6 text-white">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-4">
+            <div class="h-12 w-12 bg-white/20 rounded-xl flex items-center justify-center">
+              <mat-icon class="h-6 w-6">add_circle</mat-icon>
+            </div>
+            <div>
+              <h2 class="text-2xl font-bold">Crear Nuevo Documento</h2>
+              <p class="text-green-100 mt-1">Completa la información del documento y agrega los firmantes</p>
+            </div>
+          </div>
+          <button routerLink="/documents"
+                  class="bg-white text-green-600 px-6 py-3 rounded-xl font-semibold flex items-center space-x-2 hover:bg-gray-50 transition-colors shadow-lg">
+            <mat-icon class="h-5 w-5">arrow_back</mat-icon>
+            <span>Volver a Lista</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Formulario -->
+    <form [formGroup]="documentForm" (ngSubmit)="onSubmit()">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+        <!-- Información del Documento -->
+        <div class="lg:col-span-2">
+          <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+              <div class="flex items-center space-x-3">
+                <div class="h-8 w-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                  <mat-icon class="h-5 w-5 text-white">description</mat-icon>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900">Información del Documento</h3>
+              </div>
+            </div>
+
+            <div class="p-6 space-y-6">
+              <!-- Nombre del documento -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Nombre del documento *</label>
+                <div class="relative">
+                  <input type="text"
+                         formControlName="name"
+                         placeholder="Ej: Contrato de servicios 2024"
+                         class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                         [class.border-red-300]="isFieldInvalid('name')"
+                         maxlength="255">
+                  <mat-icon class="absolute left-3 top-3.5 h-5 w-5 text-gray-400">title</mat-icon>
+                </div>
+                <p class="mt-1 text-sm text-gray-500">Nombre descriptivo del documento</p>
+                <p *ngIf="isFieldInvalid('name')" class="mt-1 text-sm text-red-600">{{ getFieldError('name') }}</p>
+              </div>
+
+              <!-- URL del PDF -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">URL del PDF *</label>
+                <div class="relative">
+                  <input type="url"
+                         formControlName="pdf_url"
+                         placeholder="https://ejemplo.com/documento.pdf"
+                         class="block w-full pl-10 pr-20 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                         [class.border-red-300]="isFieldInvalid('pdf_url')">
+                  <mat-icon class="absolute left-3 top-3.5 h-5 w-5 text-gray-400">link</mat-icon>
+                  <button type="button"
+                          (click)="previewPdf()"
+                          class="absolute right-2 top-2 px-3 py-1.5 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors">
+                    Vista previa
+                  </button>
+                </div>
+                <p class="mt-1 text-sm text-gray-500">URL pública del PDF (debe comenzar con http:// o https://)</p>
+                <p *ngIf="isFieldInvalid('pdf_url')" class="mt-1 text-sm text-red-600">{{ getFieldError('pdf_url') }}</p>
+              </div>
+
+              <!-- Creado por -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Creado por *</label>
+                <div class="relative">
+                  <input type="text"
+                         formControlName="created_by"
+                         placeholder="Tu nombre completo"
+                         class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                         [class.border-red-300]="isFieldInvalid('created_by')">
+                  <mat-icon class="absolute left-3 top-3.5 h-5 w-5 text-gray-400">person</mat-icon>
+                </div>
+                <p class="mt-1 text-sm text-gray-500">Nombre de la persona que crea el documento</p>
+                <p *ngIf="isFieldInvalid('created_by')" class="mt-1 text-sm text-red-600">{{ getFieldError('created_by') }}</p>
+              </div>
+
+              <!-- Empresa -->
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <label class="block text-sm font-medium text-gray-700">Empresa *</label>
+                  <button type="button"
+                          (click)="openCompanyManager()"
+                          class="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors flex items-center space-x-1">
+                    <mat-icon class="h-3 w-3">business_center</mat-icon>
+                    <span>Gestión Rápida</span>
+                  </button>
+                </div>
+                <div class="relative">
+                  <select formControlName="company_id"
+                          class="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          [class.border-red-300]="isFieldInvalid('company_id')">
+                    <option value="">Selecciona una empresa</option>
+                    <option *ngFor="let company of companies" [value]="company.id">
+                      {{ company.name }}
+                    </option>
+                  </select>
+                  <mat-icon class="absolute left-3 top-3.5 h-5 w-5 text-gray-400">business</mat-icon>
+                </div>
+                <p class="mt-1 text-xs text-gray-500">Usa "Gestión Rápida" para crear una nueva empresa</p>
+                <p *ngIf="isFieldInvalid('company_id')" class="mt-1 text-sm text-red-600">{{ getFieldError('company_id') }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Firmantes -->
+        <div class="lg:col-span-1">
+          <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-pink-50">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                  <div class="h-8 w-8 bg-purple-500 rounded-lg flex items-center justify-center">
+                    <mat-icon class="h-5 w-5 text-white">group</mat-icon>
+                  </div>
+                  <h3 class="text-lg font-semibold text-gray-900">Firmantes</h3>
+                </div>
+                <button type="button"
+                        (click)="addSigner()"
+                        class="p-2 bg-purple-100 text-purple-600 rounded-lg hover:bg-purple-200 transition-colors"
+                        title="Agregar firmante">
+                  <mat-icon class="h-4 w-4">person_add</mat-icon>
+                </button>
+              </div>
+            </div>
+
+            <div class="p-6">
+              <div formArrayName="signers" class="space-y-4">
+                <div *ngFor="let signer of signersArray.controls; let i = index"
+                     [formGroupName]="i"
+                     class="p-4 border border-gray-200 rounded-xl bg-gray-50">
+
+                  <!-- Header del firmante -->
+                  <div class="flex items-center justify-between mb-4">
+                    <span class="text-sm font-medium text-gray-700">Firmante {{ i + 1 }}</span>
+                    <button type="button"
+                            (click)="removeSigner(i)"
+                            *ngIf="signersArray.length > 1"
+                            class="p-1 text-red-500 hover:bg-red-50 rounded">
+                      <mat-icon class="h-4 w-4">remove</mat-icon>
+                    </button>
+                  </div>
+
+                  <!-- Nombre del firmante -->
+                  <div class="mb-3">
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Nombre *</label>
+                    <input type="text"
+                           formControlName="name"
+                           placeholder="Nombre completo"
+                           class="block w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                  </div>
+
+                  <!-- Email del firmante -->
+                  <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Email *</label>
+                    <input type="email"
+                           formControlName="email"
+                           placeholder="email@ejemplo.com"
+                           class="block w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Acciones rápidas -->
+          <div class="mt-6 bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Acciones Rápidas</h3>
+            <div class="space-y-3">
+              <button type="button"
+                      (click)="fillExample()"
+                      class="w-full px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center space-x-2">
+                <mat-icon class="h-4 w-4">auto_awesome</mat-icon>
+                <span>Llenar Ejemplo</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Botones de acción -->
+      <div class="mt-8 flex items-center justify-between bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <div class="flex items-center space-x-4">
+          <mat-icon class="h-5 w-5 text-gray-400">info</mat-icon>
+          <span class="text-sm text-gray-600">Los campos marcados con * son obligatorios</span>
+        </div>
+
+        <div class="flex items-center space-x-4">
+          <button type="button"
+                  routerLink="/documents"
+                  class="px-6 py-3 text-gray-700 bg-gray-100 rounded-xl font-medium hover:bg-gray-200 transition-colors">
+            Cancelar
+          </button>
+          <button type="submit"
+                  [disabled]="documentForm.invalid || loading"
+                  class="px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl font-medium hover:from-green-600 hover:to-green-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2">
+            <mat-icon class="h-5 w-5" *ngIf="!loading">save</mat-icon>
+            <mat-icon class="h-5 w-5 animate-spin" *ngIf="loading">refresh</mat-icon>
+            <span>{{ loading ? 'Creando...' : 'Crear Documento' }}</span>
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

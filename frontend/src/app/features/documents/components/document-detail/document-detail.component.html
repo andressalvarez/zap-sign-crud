@@ -1,238 +1,299 @@
-<div class="document-detail-container">
-  <!-- Loading State -->
-  <div *ngIf="loading" class="loading-container">
-    <mat-spinner></mat-spinner>
-    <p>Cargando documento...</p>
+<!-- Header con diseño moderno -->
+<div class="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50" *ngIf="document">
+  <div class="bg-white border-b border-gray-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <!-- Logo y título -->
+        <div class="flex items-center space-x-4">
+          <div class="flex-shrink-0">
+            <div class="h-8 w-8 bg-gradient-to-r from-primary to-secondary rounded-lg flex items-center justify-center">
+              <span class="text-white font-bold text-sm">ZS</span>
+            </div>
+          </div>
+          <div>
+            <h1 class="text-xl font-semibold text-gray-900">ZapSign CRUD</h1>
+            <p class="text-sm text-gray-500">Gestión de Documentos y Firmas Electrónicas</p>
+          </div>
+        </div>
+
+        <!-- Notificaciones y perfil -->
+        <div class="flex items-center space-x-4">
+          <button class="p-2 text-gray-400 hover:text-gray-500 relative">
+            <mat-icon class="h-6 w-6">notifications</mat-icon>
+            <span class="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+              12
+            </span>
+          </button>
+          <div class="flex items-center space-x-2">
+            <div class="h-8 w-8 bg-gray-300 rounded-full"></div>
+            <span class="text-sm font-medium text-gray-700">Admin System</span>
+            <mat-icon class="h-4 w-4 text-gray-400">expand_more</mat-icon>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <!-- Document Detail -->
-  <div *ngIf="!loading && document" class="document-content">
-    <!-- Header -->
-    <mat-card class="header-card">
-      <mat-card-header>
-        <mat-card-title>
-          <mat-icon>description</mat-icon>
-          {{ document.name }}
-        </mat-card-title>
-        <mat-card-subtitle>
-          Documento #{{ document.id }} • {{ formatDate(document.created_at) }}
-        </mat-card-subtitle>
-      </mat-card-header>
+  <!-- Detalles del Documento Section -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Header de sección -->
+    <div class="mb-8">
+      <div class="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl p-6 text-white">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-4">
+            <div class="h-12 w-12 bg-white/20 rounded-xl flex items-center justify-center">
+              <mat-icon class="h-6 w-6">visibility</mat-icon>
+            </div>
+            <div>
+              <h2 class="text-2xl font-bold">{{ document.name }}</h2>
+              <p class="text-indigo-100 mt-1">Creado por {{ document.created_by }} el {{ document.created_at | date:'dd/MM/yyyy HH:mm' }}</p>
+            </div>
+          </div>
+          <div class="flex items-center space-x-3">
+            <button (click)="updateStatus()"
+                    [disabled]="updatingStatus"
+                    class="bg-white/20 text-white px-4 py-2 rounded-xl font-medium hover:bg-white/30 transition-colors disabled:opacity-50 flex items-center space-x-2">
+              <mat-icon class="h-4 w-4" [class.animate-spin]="updatingStatus">{{ updatingStatus ? 'refresh' : 'sync' }}</mat-icon>
+              <span>{{ updatingStatus ? 'Actualizando...' : 'Actualizar' }}</span>
+            </button>
+            <button routerLink="/documents"
+                    class="bg-white text-indigo-600 px-6 py-3 rounded-xl font-semibold flex items-center space-x-2 hover:bg-gray-50 transition-colors shadow-lg">
+              <mat-icon class="h-5 w-5">arrow_back</mat-icon>
+              <span>Volver a Lista</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
 
-      <mat-card-actions align="end">
-        <button mat-button (click)="goBack()">
-          <mat-icon>arrow_back</mat-icon>
-          Volver
-        </button>
+    <!-- Contenido principal -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-        <button mat-raised-button color="accent" (click)="updateStatus()" [disabled]="updating">
-          <mat-spinner *ngIf="updating" diameter="18" class="button-spinner"></mat-spinner>
-          <mat-icon *ngIf="!updating">sync</mat-icon>
-          {{ updating ? 'Actualizando...' : 'Actualizar Estado' }}
-        </button>
+      <!-- Información del documento -->
+      <div class="lg:col-span-2">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+            <div class="flex items-center space-x-3">
+              <div class="h-8 w-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                <mat-icon class="h-5 w-5 text-white">description</mat-icon>
+              </div>
+              <h3 class="text-lg font-semibold text-gray-900">Información del Documento</h3>
+            </div>
+          </div>
 
-        <button mat-icon-button [matMenuTriggerFor]="actionsMenu">
-          <mat-icon>more_vert</mat-icon>
-        </button>
+          <div class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-        <mat-menu #actionsMenu="matMenu">
-          <button mat-menu-item (click)="editDocument()">
-            <mat-icon>edit</mat-icon>
-            <span>Editar</span>
-          </button>
+              <!-- Nombre -->
+              <div class="flex items-start space-x-3">
+                <div class="h-10 w-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                  <mat-icon class="h-5 w-5 text-gray-600">title</mat-icon>
+                </div>
+                <div class="flex-1">
+                  <p class="text-sm font-medium text-gray-500">Nombre</p>
+                  <p class="text-lg font-semibold text-gray-900 mt-1">{{ document.name }}</p>
+                </div>
+              </div>
 
-          <button mat-menu-item (click)="openPdfUrl()">
-            <mat-icon>open_in_new</mat-icon>
-            <span>Ver en ZapSign</span>
-          </button>
+              <!-- Empresa -->
+              <div class="flex items-start space-x-3">
+                <div class="h-10 w-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                  <mat-icon class="h-5 w-5 text-gray-600">business</mat-icon>
+                </div>
+                <div class="flex-1">
+                  <p class="text-sm font-medium text-gray-500">Empresa</p>
+                  <p class="text-lg font-semibold text-gray-900 mt-1">{{ document.company.name }}</p>
+                </div>
+              </div>
 
-          <mat-divider></mat-divider>
+              <!-- Creado por -->
+              <div class="flex items-start space-x-3">
+                <div class="h-10 w-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                  <mat-icon class="h-5 w-5 text-gray-600">person</mat-icon>
+                </div>
+                <div class="flex-1">
+                  <p class="text-sm font-medium text-gray-500">Creado por</p>
+                  <p class="text-lg font-semibold text-gray-900 mt-1">{{ document.created_by }}</p>
+                </div>
+              </div>
 
-          <button mat-menu-item (click)="deleteDocument()" class="delete-action">
-            <mat-icon color="warn">delete</mat-icon>
-            <span>Eliminar</span>
-          </button>
-        </mat-menu>
-      </mat-card-actions>
-    </mat-card>
+              <!-- Fecha de creación -->
+              <div class="flex items-start space-x-3">
+                <div class="h-10 w-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                  <mat-icon class="h-5 w-5 text-gray-600">schedule</mat-icon>
+                </div>
+                <div class="flex-1">
+                  <p class="text-sm font-medium text-gray-500">Fecha de creación</p>
+                  <p class="text-lg font-semibold text-gray-900 mt-1">{{ document.created_at | date:'dd/MM/yyyy HH:mm' }}</p>
+                </div>
+              </div>
 
-    <!-- Status and Progress -->
-    <mat-card class="status-card">
-      <mat-card-content>
-        <div class="status-section">
-          <div class="status-info">
-            <div class="status-item">
-              <mat-icon>info</mat-icon>
-              <div class="status-details">
-                <span class="status-label">Estado del Documento</span>
-                <mat-chip [color]="getStatusColor(document.status)">
-                  {{ document.status }}
-                </mat-chip>
+              <!-- Estado -->
+              <div class="flex items-start space-x-3">
+                <div class="h-10 w-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                  <mat-icon class="h-5 w-5 text-gray-600">flag</mat-icon>
+                </div>
+                <div class="flex-1">
+                  <p class="text-sm font-medium text-gray-500">Estado</p>
+                  <div class="mt-1">
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
+                          [ngClass]="{
+                            'bg-green-100 text-green-800': document.status.toLowerCase() === 'completed',
+                            'bg-yellow-100 text-yellow-800': document.status.toLowerCase() === 'pending',
+                            'bg-red-100 text-red-800': document.status.toLowerCase() === 'cancelled',
+                            'bg-gray-100 text-gray-800': !['completed', 'pending', 'cancelled'].includes(document.status.toLowerCase())
+                          }">
+                      <mat-icon class="h-4 w-4 mr-1">{{ getStatusIcon(document.status) }}</mat-icon>
+                      {{ getStatusLabel(document.status) }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Última actualización -->
+              <div class="flex items-start space-x-3">
+                <div class="h-10 w-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                  <mat-icon class="h-5 w-5 text-gray-600">update</mat-icon>
+                </div>
+                <div class="flex-1">
+                  <p class="text-sm font-medium text-gray-500">Última actualización</p>
+                  <p class="text-lg font-semibold text-gray-900 mt-1">{{ document.last_updated_at | date:'dd/MM/yyyy HH:mm' }}</p>
+                </div>
               </div>
             </div>
 
-            <div class="status-item">
-              <mat-icon>timeline</mat-icon>
-              <div class="status-details">
-                <span class="status-label">Progreso de Firmas</span>
-                <div class="progress-info">
-                  <span class="progress-text">
-                    {{ getCompletedSignersCount() }} de {{ getTotalSignersCount() }} firmado(s)
-                  </span>
-                  <mat-progress-bar
-                    mode="determinate"
-                    [value]="getProgressPercentage()"
-                    class="progress-bar">
-                  </mat-progress-bar>
-                  <span class="progress-percentage">{{ getProgressPercentage() }}%</span>
+            <!-- Información de ZapSign si existe -->
+            <div *ngIf="document.open_id || document.token"
+                 class="mt-8 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
+              <div class="flex items-center space-x-3 mb-4">
+                <div class="h-8 w-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                  <mat-icon class="h-5 w-5 text-white">integration_instructions</mat-icon>
+                </div>
+                <h4 class="text-lg font-semibold text-blue-900">Información de ZapSign</h4>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div *ngIf="document.open_id">
+                  <p class="font-medium text-blue-700 mb-1">Open ID:</p>
+                  <p class="text-blue-600 font-mono">{{ document.open_id }}</p>
+                </div>
+                <div *ngIf="document.token">
+                  <p class="font-medium text-blue-700 mb-1">Token:</p>
+                  <p class="text-blue-600 font-mono text-xs break-all">{{ document.token }}</p>
+                </div>
+                <div *ngIf="document.external_id">
+                  <p class="font-medium text-blue-700 mb-1">External ID:</p>
+                  <p class="text-blue-600 font-mono">{{ document.external_id }}</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </mat-card-content>
-    </mat-card>
+      </div>
 
-    <!-- Document Information -->
-    <mat-card class="info-card">
-      <mat-card-header>
-        <mat-card-title>
-          <mat-icon>info_outline</mat-icon>
-          Información del Documento
-        </mat-card-title>
-      </mat-card-header>
-
-      <mat-card-content>
-        <div class="info-grid">
-          <div class="info-item">
-            <mat-icon>business</mat-icon>
-            <div class="info-content">
-              <span class="info-label">Empresa</span>
-              <span class="info-value">{{ document.company.name }}</span>
+      <!-- Firmantes -->
+      <div class="lg:col-span-1">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-pink-50">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-3">
+                <div class="h-8 w-8 bg-purple-500 rounded-lg flex items-center justify-center">
+                  <mat-icon class="h-5 w-5 text-white">group</mat-icon>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900">Firmantes</h3>
+              </div>
+              <span class="px-2 py-1 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">
+                {{ document.signers.length || 0 }}
+              </span>
             </div>
           </div>
 
-          <div class="info-item">
-            <mat-icon>person</mat-icon>
-            <div class="info-content">
-              <span class="info-label">Creado por</span>
-              <span class="info-value">{{ document.created_by }}</span>
-            </div>
-          </div>
+          <div class="p-6">
+            <div *ngIf="document.signers && document.signers.length > 0; else noSigners" class="space-y-4">
+              <div *ngFor="let signer of document.signers; let i = index"
+                   class="p-4 border border-gray-200 rounded-xl bg-gray-50">
 
-          <div class="info-item">
-            <mat-icon>schedule</mat-icon>
-            <div class="info-content">
-              <span class="info-label">Fecha de creación</span>
-              <span class="info-value">{{ formatDate(document.created_at) }}</span>
-            </div>
-          </div>
+                <!-- Header del firmante -->
+                <div class="flex items-center justify-between mb-3">
+                  <span class="text-sm font-medium text-gray-700">Firmante {{ i + 1 }}</span>
+                  <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
+                        [ngClass]="{
+                                                     'bg-green-100 text-green-800': signer.status && signer.status.toLowerCase() === 'signed',
+                           'bg-yellow-100 text-yellow-800': signer.status && signer.status.toLowerCase() === 'pending',
+                           'bg-red-100 text-red-800': signer.status && signer.status.toLowerCase() === 'rejected',
+                           'bg-gray-100 text-gray-800': !signer.status || !['signed', 'pending', 'rejected'].includes(signer.status.toLowerCase())
+                        }">
+                    {{ signer.status || 'Pendiente' }}
+                  </span>
+                </div>
 
-          <div class="info-item">
-            <mat-icon>update</mat-icon>
-            <div class="info-content">
-              <span class="info-label">Última actualización</span>
-              <span class="info-value">{{ formatDate(document.last_updated_at) }}</span>
-            </div>
-          </div>
-
-          <div class="info-item" *ngIf="document.open_id">
-            <mat-icon>tag</mat-icon>
-            <div class="info-content">
-              <span class="info-label">ZapSign ID</span>
-              <span class="info-value">#{{ document.open_id }}</span>
-            </div>
-          </div>
-
-          <div class="info-item" *ngIf="document.token">
-            <mat-icon>vpn_key</mat-icon>
-            <div class="info-content">
-              <span class="info-label">Token</span>
-              <span class="info-value token-value">{{ document.token }}</span>
-            </div>
-          </div>
-        </div>
-      </mat-card-content>
-    </mat-card>
-
-    <!-- Signers -->
-    <mat-card class="signers-card">
-      <mat-card-header>
-        <mat-card-title>
-          <mat-icon>people</mat-icon>
-          Firmantes ({{ document.signers.length }})
-        </mat-card-title>
-        <mat-card-subtitle>
-          Estado de las firmas del documento
-        </mat-card-subtitle>
-      </mat-card-header>
-
-      <mat-card-content>
-        <div class="signers-list" *ngIf="document.signers.length > 0; else noSigners">
-          <div *ngFor="let signer of document.signers; let i = index" class="signer-item">
-            <div class="signer-avatar">
-              <mat-icon>person</mat-icon>
-            </div>
-
-            <div class="signer-info">
-              <div class="signer-name">{{ signer.name }}</div>
-              <div class="signer-email">{{ signer.email }}</div>
-              <div class="signer-meta" *ngIf="signer.external_id">
-                <mat-icon>tag</mat-icon>
-                <span>ID: {{ signer.external_id }}</span>
+                <!-- Información del firmante -->
+                <div class="space-y-2">
+                  <div class="flex items-center space-x-2">
+                    <mat-icon class="h-4 w-4 text-gray-400">person</mat-icon>
+                    <span class="text-sm font-medium text-gray-900">{{ signer.name || 'Nombre no disponible' }}</span>
+                  </div>
+                  <div class="flex items-center space-x-2">
+                    <mat-icon class="h-4 w-4 text-gray-400">email</mat-icon>
+                    <span class="text-sm text-gray-600">{{ signer.email || 'Email no disponible' }}</span>
+                  </div>
+                  <div *ngIf="signer.token" class="flex items-center space-x-2">
+                    <mat-icon class="h-4 w-4 text-gray-400">key</mat-icon>
+                    <span class="text-xs text-gray-500 font-mono break-all">{{ signer.token }}</span>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div class="signer-status">
-              <mat-chip [color]="getSignerStatusColor(signer.status)">
-                <mat-icon>
-                  {{ signer.status === 'SIGNED' ? 'check_circle' :
-                     signer.status === 'PENDING' ? 'schedule' : 'cancel' }}
-                </mat-icon>
-                {{ signer.status }}
-              </mat-chip>
-            </div>
+            <ng-template #noSigners>
+              <div class="text-center py-8">
+                <div class="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+                  <mat-icon class="h-6 w-6 text-gray-400">group_off</mat-icon>
+                </div>
+                <p class="text-gray-500 text-sm">No hay firmantes asociados a este documento</p>
+              </div>
+            </ng-template>
           </div>
         </div>
 
-        <ng-template #noSigners>
-          <div class="no-signers">
-            <mat-icon>people_outline</mat-icon>
-            <p>No hay firmantes asignados a este documento</p>
-          </div>
-        </ng-template>
-      </mat-card-content>
-    </mat-card>
+        <!-- Acciones -->
+        <div class="mt-6 bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">Acciones</h3>
+          <div class="space-y-3">
+            <button [routerLink]="['/documents', document.id, 'edit']"
+                    class="w-full px-4 py-3 text-left bg-gradient-to-r from-amber-50 to-orange-100 hover:from-amber-100 hover:to-orange-200 rounded-xl transition-all border border-amber-200 flex items-center space-x-3">
+              <div class="h-8 w-8 bg-amber-500 rounded-lg flex items-center justify-center">
+                <mat-icon class="h-4 w-4 text-white">edit</mat-icon>
+              </div>
+              <div class="flex-1">
+                <p class="text-sm font-medium text-amber-900">Editar Documento</p>
+                <p class="text-xs text-amber-700">Modificar información local</p>
+              </div>
+            </button>
 
-    <!-- Summary Stats -->
-    <mat-card class="stats-card">
-      <mat-card-content>
-        <div class="stats-grid">
-          <div class="stat-item">
-            <mat-icon class="stat-icon pending">schedule</mat-icon>
-            <div class="stat-content">
-              <span class="stat-number">{{ getPendingSignersCount() }}</span>
-              <span class="stat-label">Pendientes</span>
-            </div>
-          </div>
-
-          <div class="stat-item">
-            <mat-icon class="stat-icon completed">check_circle</mat-icon>
-            <div class="stat-content">
-              <span class="stat-number">{{ getCompletedSignersCount() }}</span>
-              <span class="stat-label">Completados</span>
-            </div>
-          </div>
-
-          <div class="stat-item">
-            <mat-icon class="stat-icon total">people</mat-icon>
-            <div class="stat-content">
-              <span class="stat-number">{{ getTotalSignersCount() }}</span>
-              <span class="stat-label">Total</span>
-            </div>
+            <button routerLink="/documents/create"
+                    class="w-full px-4 py-3 text-left bg-gradient-to-r from-green-50 to-green-100 hover:from-green-100 hover:to-green-200 rounded-xl transition-all border border-green-200 flex items-center space-x-3">
+              <div class="h-8 w-8 bg-green-500 rounded-lg flex items-center justify-center">
+                <mat-icon class="h-4 w-4 text-white">add</mat-icon>
+              </div>
+              <div class="flex-1">
+                <p class="text-sm font-medium text-green-900">Crear Nuevo</p>
+                <p class="text-xs text-green-700">Con integración ZapSign</p>
+              </div>
+            </button>
           </div>
         </div>
-      </mat-card-content>
-    </mat-card>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Estado de carga -->
+<div *ngIf="!document" class="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
+  <div class="text-center">
+    <div class="h-12 w-12 bg-gray-200 rounded-lg flex items-center justify-center mx-auto mb-4 animate-pulse">
+      <mat-icon class="h-6 w-6 text-gray-400">description</mat-icon>
+    </div>
+    <p class="text-gray-500">Cargando documento...</p>
   </div>
 </div>

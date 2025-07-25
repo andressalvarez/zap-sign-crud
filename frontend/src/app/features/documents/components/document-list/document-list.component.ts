@@ -1,60 +1,88 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { Router } from '@angular/router';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { MatDialog } from '@angular/material/dialog';
+import { MatCardModule } from '@angular/material/card';
+import { MatTableModule } from '@angular/material/table';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatChipsModule } from '@angular/material/chips';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatSortModule } from '@angular/material/sort';
+import { Subject, takeUntil, catchError, of, tap } from 'rxjs';
 import { DocumentService } from '../../services/document.service';
-import { DocumentListItem } from '../../../../core/models/document.interface';
+import { DocumentListItem, Company } from '../../../../core/models/document.interface';
+import { ConfirmDeleteDialogComponent } from '../confirm-delete-dialog/confirm-delete-dialog.component';
 
 @Component({
   selector: 'app-document-list',
+  standalone: true,
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterModule,
+    MatCardModule,
+    MatTableModule,
+    MatButtonModule,
+    MatIconModule,
+    MatChipsModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    MatProgressSpinnerModule,
+    MatTooltipModule,
+    MatSortModule
+  ],
   templateUrl: './document-list.component.html',
   styleUrls: ['./document-list.component.scss']
 })
 export class DocumentListComponent implements OnInit, OnDestroy {
+  // Statistics properties
+  totalDocuments = 0;
+  pendingDocuments = 0;
+  completedDocuments = 0;
+
+  // Display columns for table (no longer needed with new design)
+  displayedColumns: string[] = ['name', 'status', 'signers', 'created_by', 'created_at', 'actions'];
+
   private destroy$ = new Subject<void>();
 
   documents: DocumentListItem[] = [];
-  loading$ = this.documentService.loading$;
+  filteredDocuments: DocumentListItem[] = [];
+  companies: Company[] = [];
+  loading = false;
 
-  displayedColumns: string[] = [
-    'name',
-    'status',
-    'company_name',
-    'signers_count',
-    'created_by',
-    'created_at',
-    'actions'
-  ];
-
-  statusFilters = [
-    { value: '', label: 'Todos los estados' },
-    { value: 'PENDING_API', label: 'Pendiente API' },
-    { value: 'PENDING', label: 'Pendiente' },
-    { value: 'COMPLETED', label: 'Completado' },
-    { value: 'CANCELLED', label: 'Cancelado' },
-    { value: 'API_ERROR', label: 'Error API' }
-  ];
-
-  selectedStatus = '';
+  // Filtros y búsqueda
+  searchTerm = '';
+  statusFilter = '';
+  companyFilter = '';
 
   constructor(
     private documentService: DocumentService,
+    private snackBar: MatSnackBar,
+    private dialog: MatDialog,
     private router: Router,
-    private snackBar: MatSnackBar
+    private activatedRoute: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
-    this.loadDocuments();
-
-    // Subscribe to documents changes
-    this.documentService.documents$
+    // Leer query parameters de la URL
+    this.activatedRoute.queryParams
       .pipe(takeUntil(this.destroy$))
-      .subscribe(documents => {
-        this.documents = this.selectedStatus
-          ? documents.filter(doc => doc.status === this.selectedStatus)
-          : documents;
-      });
+      .subscribe(params => {
+        if (params['company']) {
+          this.companyFilter = params['company'];
+          console.log('🔍 Filtro de empresa aplicado:', this.companyFilter);
+        }
+                 this.loadCompanies();
+         this.loadDocuments();
+       });
   }
 
   ngOnDestroy(): void {
@@ -62,29 +90,101 @@ export class DocumentListComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
+  loadCompanies(): void {
+    this.documentService.getCompanies()
+      .pipe(
+        takeUntil(this.destroy$),
+        catchError(error => {
+          console.error('Error cargando empresas:', error);
+          return of({ results: [] });
+        })
+      )
+      .subscribe(response => {
+        this.companies = response.results;
+      });
+  }
+
   loadDocuments(): void {
-    this.documentService.getDocuments().subscribe({
-      next: () => {
-        this.snackBar.open('Documentos cargados exitosamente', 'Cerrar', {
-          duration: 3000
-        });
-      },
-      error: (error) => {
-        this.snackBar.open(`Error al cargar documentos: ${error.message}`, 'Cerrar', {
-          duration: 5000
-        });
-      }
+    this.loading = true;
+
+    this.documentService.getDocuments()
+      .pipe(
+        takeUntil(this.destroy$),
+        catchError(error => {
+          this.snackBar.open(
+            `Error al cargar documentos: ${error.message}`,
+            'Cerrar',
+            { duration: 5000 }
+          );
+          this.loading = false;
+          return of({ results: [], count: 0, next: null, previous: null });
+        }),
+        tap(() => this.loading = false)
+      )
+      .subscribe(response => {
+        this.documents = response.results;
+        this.filteredDocuments = [...this.documents];
+        this.updateStatistics();
+        this.applyFilters(); // Aplicar filtros después de cargar
+      });
+  }
+
+  updateStatistics(): void {
+    this.totalDocuments = this.documents.length;
+    this.pendingDocuments = this.documents.filter(doc => doc.status === 'pending' || doc.status === 'PENDING').length;
+    this.completedDocuments = this.documents.filter(doc => doc.status === 'completed' || doc.status === 'COMPLETED').length;
+  }
+
+  onSearch(): void {
+    this.applyFilters();
+  }
+
+  onFilterChange(): void {
+    this.applyFilters();
+  }
+
+  applyFilters(): void {
+    this.filteredDocuments = this.documents.filter(document => {
+      const matchesSearch = !this.searchTerm ||
+        document.name.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+        document.created_by.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+        document.company_name.toLowerCase().includes(this.searchTerm.toLowerCase());
+
+      const matchesStatus = !this.statusFilter ||
+        document.status.toLowerCase() === this.statusFilter.toLowerCase();
+
+      // Nuevo filtro por empresa usando company ID
+      const matchesCompany = !this.companyFilter ||
+        document.company_name === this.getCompanyNameById(parseInt(this.companyFilter)) ||
+        document.company_name.toLowerCase().includes(this.companyFilter.toLowerCase());
+
+      return matchesSearch && matchesStatus && matchesCompany;
     });
   }
 
-  onStatusFilterChange(): void {
-    const allDocuments = this.documentService.documents$.value;
-    this.documents = this.selectedStatus
-      ? allDocuments.filter(doc => doc.status === this.selectedStatus)
-      : allDocuments;
+  getCompanyNameById(companyId: number): string {
+    const company = this.companies.find(c => c.id === companyId);
+    return company ? company.name : '';
   }
 
-  createDocument(): void {
+  parseInt(value: string): number {
+    return parseInt(value, 10);
+  }
+
+  clearFilters(): void {
+    this.searchTerm = '';
+    this.statusFilter = '';
+    this.companyFilter = '';
+    this.filteredDocuments = [...this.documents];
+    // Actualizar la URL para remover el query parameter
+    this.router.navigate([], {
+      relativeTo: this.activatedRoute,
+      queryParams: {},
+      queryParamsHandling: 'merge'
+    });
+  }
+
+  createNewDocument(): void {
     this.router.navigate(['/documents/create']);
   }
 
@@ -96,57 +196,74 @@ export class DocumentListComponent implements OnInit, OnDestroy {
     this.router.navigate(['/documents', id, 'edit']);
   }
 
-  updateStatus(document: DocumentListItem): void {
-    this.documentService.updateDocumentStatus(document.id).subscribe({
-      next: (updatedDoc) => {
-        this.snackBar.open(
-          `Estado actualizado: ${updatedDoc.status}`,
-          'Cerrar',
-          { duration: 3000 }
-        );
-      },
-      error: (error) => {
-        this.snackBar.open(
-          `Error al actualizar estado: ${error.message}`,
-          'Cerrar',
-          { duration: 5000 }
-        );
+  deleteDocument(id: number): void {
+    const dialogRef = this.dialog.open(ConfirmDeleteDialogComponent, {
+      width: '400px',
+      data: {
+        title: 'Eliminar documento',
+        message: '¿Estás seguro de que deseas eliminar este documento? Esta acción no se puede deshacer.'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.documentService.deleteDocument(id)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe({
+            next: () => {
+              this.snackBar.open('Documento eliminado exitosamente', 'Cerrar', { duration: 3000 });
+              this.loadDocuments();
+            },
+            error: (error) => {
+              this.snackBar.open(`Error al eliminar documento: ${error.message}`, 'Cerrar', { duration: 5000 });
+            }
+          });
       }
     });
   }
 
-  deleteDocument(document: DocumentListItem): void {
-    if (confirm(`¿Estás seguro de eliminar el documento "${document.name}"?`)) {
-      this.documentService.deleteDocument(document.id).subscribe({
-        next: () => {
-          this.snackBar.open('Documento eliminado exitosamente', 'Cerrar', {
-            duration: 3000
-          });
-        },
-        error: (error) => {
-          this.snackBar.open(`Error al eliminar documento: ${error.message}`, 'Cerrar', {
-            duration: 5000
-          });
-        }
-      });
-    }
+  refreshDocuments(): void {
+    this.loadDocuments();
   }
 
-  getStatusColor(status: string): string {
-    switch (status) {
-      case 'COMPLETED': return 'primary';
-      case 'PENDING': return 'accent';
-      case 'CANCELLED': return 'warn';
-      case 'API_ERROR': return 'warn';
+  updateDocumentStatus(id: number): void {
+    this.documentService.updateDocumentStatus(id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (updatedDocument) => {
+          this.snackBar.open('Estado del documento actualizado', 'Cerrar', { duration: 3000 });
+          this.loadDocuments();
+        },
+        error: (error) => {
+          this.snackBar.open(`Error al actualizar estado: ${error.message}`, 'Cerrar', { duration: 5000 });
+        }
+      });
+  }
+
+  getStatusColor(status: string): 'primary' | 'accent' | 'warn' | '' {
+    switch (status.toLowerCase()) {
+      case 'completed': return 'primary';
+      case 'pending': return 'accent';
+      case 'cancelled': return 'warn';
       default: return '';
     }
   }
 
-  formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleDateString('es-ES');
+  getStatusIcon(status: string): string {
+    switch (status.toLowerCase()) {
+      case 'completed': return 'check_circle';
+      case 'pending': return 'schedule';
+      case 'cancelled': return 'cancel';
+      default: return 'help';
+    }
   }
 
-  refreshDocuments(): void {
-    this.documentService.refreshDocuments();
+  getStatusLabel(status: string): string {
+    switch (status.toLowerCase()) {
+      case 'completed': return 'Completado';
+      case 'pending': return 'Pendiente';
+      case 'cancelled': return 'Cancelado';
+      default: return status;
+    }
   }
 }
